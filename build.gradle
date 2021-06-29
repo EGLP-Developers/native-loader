@@ -2,7 +2,6 @@ plugins {
     id 'java-library'
     id 'maven'
     id 'maven-publish'
-    id 'com.jfrog.bintray' version '1.8.4'
 }
 
 def versionObj = new Version(major: 0, minor: 7, revision: 0)
@@ -35,31 +34,24 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 
 publishing {
     publications {
-        BintrayRelease(MavenPublication) {
+        maven(MavenPublication) {
             from components.java
             groupId 'com.github.natanbc'
             artifactId 'native-loader'
+            version version
 
             artifact sourceJar
             artifact javadocJar
         }
     }
-}
-
-bintray {
-    version = project.version
-    user = getProjectProperty("BINTRAY_USERNAME")
-    key = getProjectProperty("BINTRAY_API_KEY")
-    publications = ["BintrayRelease"]
-    pkg {
-        repo = 'maven'
-        name = 'native-loader'
-        licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/natanbc/native-loader.git'
-        publish = true
-        version {
-            name = project.version.toString()
-            released = new Date()
+    repositories {
+        maven {
+            name = "maven"
+            credentials(PasswordCredentials) {
+                username getProjectProperty("MAVEN_USERNAME")
+                password getProjectProperty("MAVEN_PASSWORD")
+            }
+            url = getProjectProperty("MAVEN_URL")
         }
     }
 }
@@ -72,13 +64,6 @@ String getProjectProperty(String propertyName) {
         property = System.getenv(propertyName) ?: ""
     }
     return property
-}
-
-bintrayUpload {
-    dependsOn build
-
-    onlyIf { !getProjectProperty("BINTRAY_USERNAME").empty }
-    onlyIf { !getProjectProperty("BINTRAY_API_KEY").empty }
 }
 
 class Version {
